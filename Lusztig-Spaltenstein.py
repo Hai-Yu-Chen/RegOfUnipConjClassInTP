@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[55]:
+# In[21]:
 
 
 # Lusztig-Spaltenstein Algorithm
@@ -9,23 +9,22 @@
 #                       2
 
 # Input under above convention if type E
-J=[2,7,8]
-K=[2,5,6]
+J=[1,2,3,4];
+K=[1,2,3,5];
 Type='E';n=8;
 
 # Main program
 W=WeylGroup([Type,n],prefix="s",implementation="permutation");
-alpha=W.positive_roots();
-s=W.simple_reflections();
 I=[]; # Want to construct I_i, with I_0=J, I_n=K satisfying given conditions.
 X=[]; # The elements used for conjugation.
-I.append(J); #I_0=J;
+I.append(J); #I_0=J.
 conjugate=False; #If J and K are conjugated.
+M=copy(I); # Remember all conjugated sets.
 
 def DFS(i):
     global conjugate;
     for j in range(n):
-        if (not (j+1) in I[i]):
+        if (not ((j+1) in I[i])):
             
             L=copy(I[i]);
             L.append(j+1);
@@ -40,7 +39,7 @@ def DFS(i):
                 if y.length()!=1: #x^-1*L*x is not simple reflection
                     flag=True;
                     break;
-                L[k]=int(str(y)[1]);
+                L[k]=int(str(y)[1:]);
             if flag:
                 continue;
             if Set(L)==Set(K):
@@ -52,15 +51,15 @@ def DFS(i):
                 print(Set(I[len(I)-1]));
                 return;
             
-            # detect if L is already inside the conjuation sequence I.
+            # detect if L is already inside the conjuation class of J, cutting redundant search.
             selfloop=False;
-            for l in range(i+1):
-                if Set(L)==Set(I[l]):
+            for l in range(len(M)):
+                if (Set(L)==Set(M[l])):
                     selfloop=True;
             if selfloop:
                 continue;
-                
             I.append(L);
+            M.append(L);
             DFS(i+1);
             if conjugate:
                 return;
