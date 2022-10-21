@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[68]:
+# In[4]:
 
 
 # Conventions are the same as Bourbaki, for example,
@@ -25,7 +25,7 @@ from sage.combinat.root_system.dynkin_diagram import DynkinDiagram_class
 
 
 
-
+# weight algorithm
 
 def weight(globalType, globaln, D): # return the weigtht of a chunk(type of original dynkin diagram, rank of original dynkin diagram, current chunk)
     n=D.rank();
@@ -257,7 +257,7 @@ def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin di
 
 
 
-
+# pattern algorithm
 
 def branch(x,last_root,I1,I2,J,D,m,result):
     # Find m number of I1 vertices starting from x protected by I2(starting point, last step, main branch label, protection label, all labeled roots, dynkin diagram, steps to remain, record history root): return successful or not. 
@@ -268,7 +268,6 @@ def branch(x,last_root,I1,I2,J,D,m,result):
             if k in I1:
                 next_root.append(k);
             nbhd.append(k);
-#     print("x=",x,"lastroot=",last_root,"nbhd=",nbhd,"next root=",next_root,"I1=",I1,"I2=",I2,"J=",J,"m=",m);
     if m<=1: # final step.
         flag=True;
         for k in nbhd:
@@ -282,12 +281,9 @@ def branch(x,last_root,I1,I2,J,D,m,result):
     # not final step.
     for y in next_root:
         flag=True;
-#         print(y,nbhd)
         for k in nbhd:
             if (not(k in I2)) and (k!=y): # protection check except next root.
-#                 print("k=",k)
                 flag=False;
-#                 print(k,I2,y,flag,"###############")
         if flag:
             result.append(y);
             temp,temp1=branch(y,[x],I1,I2,J,D,m-1,result);
@@ -295,7 +291,7 @@ def branch(x,last_root,I1,I2,J,D,m,result):
                 return True,temp1;
             result.pop();
     return False,[]; # return false if no next roots are successful.
-def pattern1(x,y,J1,J2,J,D,m): # root x has label J1 and y has J2, we want to find m number of J1 dominant m number of J2 pattern with J1 protection.
+def pattern1(x,y,J1,J2,J,D,m): # root x has label J1 and y has J2, we want to find m number of J1 dominant m number of J2 pattern with J1 protection: return vertices to be killed.
     flag1,negative_branch=branch(y,[x],J2,J1,J,D,m,[y])
     flag2,positive_branch=branch(x,[y],J1,J1,J,D,m,[x]);
     if flag1 and flag2:
@@ -305,12 +301,9 @@ def pattern1(x,y,J1,J2,J,D,m): # root x has label J1 and y has J2, we want to fi
                     return True,[j];
     return False,[];
 
-def pattern2(x,y,J1,J2,J,D): # root x has label J1 and y has J2, we want to find m number of J1 dominant m number of J2 pattern with J1 protection.
-    flag1,negative_branch=branch(y,[x],J2,J1,J,D,2,[2,y])
-#     print(flag1,negative_branch);
-#     print("!!!!!!!!!",x,y,J1,J1,J,[x])
+def pattern2(x,y,J1,J2,J,D): # root x has label J1 and y has J2, we want to find m number of J1 dominant m number of J2 pattern with J1 protection: return vertices to be killed.
+    flag1,negative_branch=branch(y,[x],J2,J1,J,D,2,[2,y]);
     flag2,positive_branch=branch(x,[2,y],J1,J1,J,D,3,[x]);
-#     print(flag2,positive_branch);
     if flag1 and flag2:
         for i in positive_branch:
             for j in negative_branch:
@@ -322,8 +315,7 @@ def pattern_alg(Type, D, n,J1,J2,J):
     if Set(J)==Set(J1) or Set(J)==Set(J2):  # the whole diagram is uniformly labeled.
         return [];
     kill_list=[];
-    if Type=="E" and n==8: # pattern 4 for type E8.
-#         print(Set(J1),Set([1,2,3,4]))
+    if Type=="E" and n==8: # pattern 5 for type E8.
         if Set(J1)==Set([1,2,3,4]) and Set(J2)==Set([5,6,7,8]):
             kill_list.append(5);
             return kill_list;
@@ -339,7 +331,6 @@ def pattern_alg(Type, D, n,J1,J2,J):
         for j in J:
             if j!=i and D.subtype(Set([i,j])).is_connected()==True: # j is the neighbour of i.
                 nbhd.append(j);
-#         print(i,nbhd,count2)
         for j in nbhd:
             if quit: break;
             if (i in J1) and (j in J2): # j is the neighbour of i with opposite sign.
@@ -353,7 +344,7 @@ def pattern_alg(Type, D, n,J1,J2,J):
                     if flag: 
                         kill_list=kill_list+copy(result);
                         quit=True;
-            if (i in J2) and (j in J1): 
+            if (i in J2) and (j in J1): # switching labels J1 and J2.
                 for m in [1,2,3]:
                     flag,result=pattern1(i,j,J2,J1,J,D,m); # use J2 dominant J1 pattern.
                     if flag: 
@@ -365,7 +356,6 @@ def pattern_alg(Type, D, n,J1,J2,J):
                         kill_list=kill_list+copy(result);
                         quit=True;
             
-#     print(kill_list)     
     J1=list(Set(J1).difference(Set(kill_list)));
     J2=list(Set(J2).difference(Set(kill_list)));
     J=list(Set(J).difference(Set(kill_list)));
@@ -387,18 +377,21 @@ def pattern_alg(Type, D, n,J1,J2,J):
         I1_relabel=[label[w] for w in I1];
         I2_relabel=[label[w] for w in I2];
         I=list(Set(I1_relabel).union(Set(I2_relabel)));
-        if D1_relabel.cartan_matrix().cartan_type().type()=="E":
+        if D1_relabel.cartan_matrix().cartan_type().type()=="E": # if the remaining subdiagram is of Type E, we do pattern algorithm again.
             temp=pattern_alg(D1_relabel.cartan_matrix().cartan_type().type(),D1_relabel,D1_relabel.rank(),I1_relabel,I2_relabel,I);
-        else:
+        else: # if of classical types, we do weight algorithm.
             temp=weightAlg(D1_relabel.cartan_matrix().cartan_type().type(),D1_relabel,D1_relabel.rank(),I1_relabel,I2_relabel,I);
         if temp!=[]:
             temp_1=[label_inv[w] for w in temp];
-#             print(temp_1);
             kill_list=list(Set(kill_list).union(Set(temp_1)));
     return copy(kill_list);
     
-J=list(Set(J1).union(Set(J2)));
+# # test pattern algorithm individually.
+# J=list(Set(J1).union(Set(J2)));
 # print("One possible J is",sorted(list(Set(list(Set(J1).union(Set(J2)))).difference(Set(pattern_alg(Type,D,n,copy(J1),copy(J2),copy(J)))))));
+
+
+
 
 
 
@@ -406,7 +399,8 @@ J=list(Set(J1).union(Set(J2)));
 
 # Lusztig_Spaltenstein algorithm
 
-def DFS(i,conjugate,W,I,X,M,J,K):
+def Lusztig_Spaltenstein(i,conjugate,W,I,X,M,J,K):  
+    # return J and K are conjugated or not (current position in I, conjugated or not, weyl group, I:I_i with I_0=J  I_n=K satisfying given conditions, record element used for conjugation, collection of all conjugates of J, # The elements used for conjugation, J,K): boolean whether J and K are conjugated.
     if Set(J)==Set(K):
         return True;
     for j in range(n):
@@ -431,6 +425,7 @@ def DFS(i,conjugate,W,I,X,M,J,K):
             if Set(L)==Set(K):
                 conjugate=True;
                 I.append(L);
+#                 Uncomment following code if want detailed conjugation procedure.
 #                 print("The two parabolic subgroups are conjugate, with conjugation sequence as follows:");
 #                 for l in range(len(I)-1):
 #                     print(Set(I[l]),"--", X[l],"-> ",end="");
@@ -445,33 +440,13 @@ def DFS(i,conjugate,W,I,X,M,J,K):
             if selfloop:
                 continue;
             I.append(L);
-            M.append(L);
-            conjugate=DFS(i+1,conjugate,W,I,X,M,J,K);
+            M.append(L); # memorize all conjugates of J.
+            conjugate=Lusztig_Spaltenstein(i+1,conjugate,W,I,X,M,J,K);
             if conjugate:
                 return conjugate;
             I.pop();
             X.pop();
-    return conjugate;
-
-
-def Lusztig_Spaltenstein(I,X,J,K,W,Type,n): # I:I_i, with I_0=J, I_n=K satisfying given conditions,# The elements used for conjugation
-    I.append(J); #I_0=J.
-    conjugate=DFS(0,False,W,copy(I),copy(X),copy(I),J,K);
-#         print("The two parabolic subgroups are not conjugate.")
-    return conjugate;
-        
-# J=[1,2,5,6];
-# K=[1,2,4,6];
-
-# print(J,K,Lusztig_Spaltenstein([],[],J,K,WeylGroup(D.cartan_matrix().cartan_type(),prefix="s",implementation="permutation"),Type,n));
-    
-    
-    
-    
-    
-    
-    
-    
+    return conjugate;   
     
     
     
@@ -479,19 +454,18 @@ def Lusztig_Spaltenstein(I,X,J,K,W,Type,n): # I:I_i, with I_0=J, I_n=K satisfyin
 
 
 
-# below are testing code.
+# below are testing code for all cases in type=A/D/E,n=6-8.
 def testing(J1,J2,i,Type,D,n):
     if i>n:
-#         print(Type,D,n,copy(J1),copy(J2),copy(J))
         result_weight=sorted(list(Set(list(Set(J1).union(Set(J2)))).difference(Set(weightAlg(Type,D,n,copy(J1),copy(J2),list(Set(J1).union(Set(J2))))))));
         result_pattern=sorted(list(Set(list(Set(J1).union(Set(J2)))).difference(Set(pattern_alg(Type,D,n,copy(J1),copy(J2),copy(list(Set(J1).union(Set(J2)))))))));
-        temp=Lusztig_Spaltenstein([],[],result_weight,result_pattern,WeylGroup(D.cartan_matrix().cartan_type(),prefix="s",implementation="permutation"),Type,n);
+        temp=Lusztig_Spaltenstein(0,False,WeylGroup(D.cartan_matrix().cartan_type(),prefix="s",implementation="permutation"),[result_weight],[],[result_weight],result_weight,result_pattern);
         if temp: 
             result_LS="conjugated";
         else:
             result_LS="not conjugated";
-#             print(J1,J2,"weight:",result_weight,"pattern:",result_pattern)
-        print(J1,J2,"weight:",result_weight,"pattern:",result_pattern,"They are",result_LS);
+#             print(J1,J2,"weight:",result_weight,"pattern:",result_pattern) #uncomment if only want not conjugated output.
+        print("J1=",J1,"J2=",J2,"weight:",result_weight,"pattern:",result_pattern,"\n\t\t\t\t\t\t\t\t\t\t\t They are",result_LS);
         return;
     J1.append(i);
     testing(J1,J2,i+1,Type,D,n)
@@ -499,9 +473,9 @@ def testing(J1,J2,i,Type,D,n):
     J2.append(i);
     testing(J1,J2,i+1,Type,D,n)
     J2.pop();
-#     testing(J1,J2,i+1,Type,D,n)
-for Type in ['E']:
-    for n in [6,7,8]:
+#     testing(J1,J2,i+1,Type,D,n) # uncomment if want cases where J1 union J2 is not all vertices.
+for Type in ['A','D','E']: # input all test types you want in the list here.
+    for n in [6,7,8]: # input all test ranks you want in the list here.
         print("\n\n testing type",Type, n)
         testing([1],[],2,Type,DynkinDiagram([Type, n]),n)
 
