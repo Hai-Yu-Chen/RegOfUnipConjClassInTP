@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[4]:
+# In[5]:
 
 
 # Conventions are the same as Bourbaki, for example,
@@ -16,8 +16,6 @@ D=DynkinDiagram([Type, n]);
 
 # main program.
 from sage.combinat.root_system.dynkin_diagram import DynkinDiagram_class
-
-
 
 
 
@@ -76,7 +74,7 @@ def disjointChunks(dynkin,E,i,C,P,maxLen,D): # return all maximal selection P of
     
 def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin diagram D,J1,J2(type of dynkin diagram, dynkin diagram, rank, label J1, label J2, union of all labels/support)
     if Set(J)==Set(J1) or Set(J)==Set(J2):  # the whole diagram is uniformly labeled.
-        return [];
+        return [[]];
     L1=D.subtype(J1);
     L2=D.subtype(J2);
     index1=DynkinDiagram_class(L1).strongly_connected_components();
@@ -112,7 +110,7 @@ def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin di
     P,temp=disjointChunks([],Set([]),0,C,[],0,D); # get the list of maximal selections.
     dominant_collection=[];
     if len(P)==1:
-        dominant_collection=P[0];
+        dominant_collection.append(P[0]);
     else: # Step 3: tie breaking.
         # 1. choose as many type A as possible.
         P1=copy(P);
@@ -123,7 +121,7 @@ def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin di
         if len(P1)>0:
             P=P1;
         if len(P)==1:
-            dominant_collection=P[0];
+            dominant_collection.append(P[0]);
         else:
             # 2. choose those not adjacent to extra root.
             extraRoots=[];
@@ -148,7 +146,7 @@ def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin di
                 if len(P1)>0:
                     P=P1;
                 if len(P)==1:
-                    dominant_collection=P[0];
+                    dominant_collection.append(P[0]);
                 else:
                     # 3. A^# and A^b cases.
                     if Type=="E":
@@ -157,7 +155,7 @@ def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin di
                             for l in d:
                                 if l[2][1]==1:    # A^# case.
                                     f=True;
-                                    dominant_collection=d;
+                                    dominant_collection.append(d);
                                     break;
                         if not f:
                             P1=copy(P);
@@ -169,53 +167,74 @@ def weightAlg(Type, D,n , J1, J2,J): # the weight algorithm on labeled dynkin di
                                 P=P1;
         
     if dominant_collection==[]:    # 4. the rest choices are all ok.
-        dominant_collection=P[0];
-    dominants=Set({});
-    for d in dominant_collection:
-        dominants=dominants.union(Set(d[0]));
-    dominants=list(dominants)
-    
-    # kill the roots adjacents to the dominant selection.
-    kill_list=[];
-    for i in D.index_set():
-        if not (i in dominants):
-            f=False;
-            for j in dominants:
-                if D.subtype(Set([i]).union(Set([j]))).is_connected():
-                    f=True;
-            if f:
-                kill_list.append(i);
-                if i in J1:
-                    J1.remove(i);
-                if i in J2:
-                    J2.remove(i);
-                if i in J:
-                    J.remove(i);
-                    
-    # induction with the subdiagram.
-    D=D.subtype(J);
-    for c in DynkinDiagram_class(D).strongly_connected_components():
-        if len(c)==1:
-            continue;
-        D1=D.subtype(c);
-        I1=list(Set(J1).intersection(Set(c)));
-        I2=list(Set(J2).intersection(Set(c)));
-        I=c;
-        if "type_relabel" in D1.cartan_matrix().cartan_type().__module__: # need relabeling
-            label_inv=D1.cartan_matrix().cartan_type()._relabelling;
-        else:
-            label_inv={v:v for v in range(1,len(c)+1)}; # trivial relabeling
-        label = {v: w for w, v in label_inv.items()}
-        D1_relabel=D1.relabel(label)
-        I1_relabel=[label[w] for w in I1];
-        I2_relabel=[label[w] for w in I2];
-        I=list(Set(I1_relabel).union(Set(I2_relabel)));
-        temp=weightAlg(D1_relabel.cartan_matrix().cartan_type().type(),D1_relabel,D1_relabel.rank(),I1_relabel,I2_relabel,I);
-        if temp!=[]:
-            temp_1=[label_inv[w] for w in temp]
-            kill_list=list(Set(kill_list).union(Set(temp_1)));
-    return copy(kill_list);
-
+        dominant_collection+=P;
+        
+    totalKillList=[];
+    D_copy=copy(D);
+    J1_copy=copy(J1);
+    J2_copy=copy(J2);
+    J_copy=copy(J);
+    for dominant_selection in dominant_collection:
+        D=copy(D_copy);
+        J1=copy(J1_copy);
+        J2=copy(J2_copy);
+        J=copy(J_copy);
+        dominants=Set({});
+        for d in dominant_selection:
+            dominants=dominants.union(Set(d[0]));
+        dominants=list(dominants);
+        # kill the roots adjacents to the dominant selection.
+        kill_list=[];
+        for i in D.index_set():
+            if not (i in dominants):
+                f=False;
+                for j in dominants:
+                    if D.subtype(Set([i]).union(Set([j]))).is_connected():
+                        f=True;
+                if f:
+                    kill_list.append(i);
+                    if i in J1:
+                        J1.remove(i);
+                    if i in J2:
+                        J2.remove(i);
+                    if i in J:
+                        J.remove(i);
+        # induction with the subdiagram.
+        kill_list=list(Set(kill_list));
+        D=D.subtype(J);
+        subdiagram=False;
+        kill_list=[kill_list];
+        for c in DynkinDiagram_class(D).strongly_connected_components():
+            if len(c)==1:
+                continue;
+            D1=D.subtype(c);
+            I1=list(Set(J1).intersection(Set(c)));
+            I2=list(Set(J2).intersection(Set(c)));
+            I=c;
+            if "type_relabel" in D1.cartan_matrix().cartan_type().__module__: # need relabeling
+                label_inv=D1.cartan_matrix().cartan_type()._relabelling;
+            else:
+                label_inv={v:v for v in range(1,len(c)+1)}; # trivial relabeling
+            label = {v: w for w, v in label_inv.items()}
+            D1_relabel=D1.relabel(label)
+            I1_relabel=[label[w] for w in I1];
+            I2_relabel=[label[w] for w in I2];
+            I=list(Set(I1_relabel).union(Set(I2_relabel)));
+            totalTemp=weightAlg(D1_relabel.cartan_matrix().cartan_type().type(),D1_relabel,D1_relabel.rank(),I1_relabel,I2_relabel,I);
+            newKillList=[];
+            for temp in totalTemp:
+                if temp!=[]:
+                    temp_1=[label_inv[w] for w in temp];
+                    subdiagram=True;
+                    for j in kill_list:
+                        newKillList.append(copy(list(Set(j).union(Set(temp_1)))));
+            if newKillList!=[]:
+                kill_list=newKillList;
+                
+        for j in kill_list:
+            if not(j in totalKillList): 
+                totalKillList.append(j);
+    return copy(totalKillList);
 
 
 
@@ -381,6 +400,7 @@ def pattern_alg(Type, D, n,J1,J2,J):
             temp=pattern_alg(D1_relabel.cartan_matrix().cartan_type().type(),D1_relabel,D1_relabel.rank(),I1_relabel,I2_relabel,I);
         else: # if of classical types, we do weight algorithm.
             temp=weightAlg(D1_relabel.cartan_matrix().cartan_type().type(),D1_relabel,D1_relabel.rank(),I1_relabel,I2_relabel,I);
+            temp=temp[0];
         if temp!=[]:
             temp_1=[label_inv[w] for w in temp];
             kill_list=list(Set(kill_list).union(Set(temp_1)));
@@ -457,15 +477,18 @@ def Lusztig_Spaltenstein(i,conjugate,W,I,X,M,J,K):
 # below are testing code for all cases in type=A/D/E,n=6-8.
 def testing(J1,J2,i,Type,D,n):
     if i>n:
-        result_weight=sorted(list(Set(list(Set(J1).union(Set(J2)))).difference(Set(weightAlg(Type,D,n,copy(J1),copy(J2),list(Set(J1).union(Set(J2))))))));
+        print("J1=",J1,"J2=",J2)
         result_pattern=sorted(list(Set(list(Set(J1).union(Set(J2)))).difference(Set(pattern_alg(Type,D,n,copy(J1),copy(J2),copy(list(Set(J1).union(Set(J2)))))))));
-        temp=Lusztig_Spaltenstein(0,False,WeylGroup(D.cartan_matrix().cartan_type(),prefix="s",implementation="permutation"),[result_weight],[],[result_weight],result_weight,result_pattern);
-        if temp: 
-            result_LS="conjugated";
-        else:
-            result_LS="not conjugated";
-#             print(J1,J2,"weight:",result_weight,"pattern:",result_pattern) #uncomment if only want not conjugated output.
-        print("J1=",J1,"J2=",J2,"weight:",result_weight,"pattern:",result_pattern,"\n\t\t\t\t\t\t\t\t\t\t\t They are",result_LS);
+        totalKillList=weightAlg(Type,D,n,copy(J1),copy(J2),list(Set(J1).union(Set(J2))));
+        for kill_list in totalKillList:
+            result_weight=sorted(list(Set(list(Set(J1).union(Set(J2)))).difference(Set(kill_list))));
+            temp=Lusztig_Spaltenstein(0,False,WeylGroup(D.cartan_matrix().cartan_type(),prefix="s",implementation="permutation"),[result_weight],[],[result_weight],result_weight,result_pattern);
+            if temp: 
+                result_LS="conjugated";
+            else:
+                result_LS="not conjugated";
+#                 print(J1,J2,"weight:",result_weight,"pattern:",result_pattern) #uncomment if only want not conjugated output.
+            print("weight:",result_weight,"pattern:",result_pattern,"\n\t\t\t\t\t\t\t\t\t\t\t They are",result_LS);
         return;
     J1.append(i);
     testing(J1,J2,i+1,Type,D,n)
