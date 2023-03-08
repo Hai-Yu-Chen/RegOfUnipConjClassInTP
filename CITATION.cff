@@ -1,0 +1,23 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Regularity of Unipotent Elements in Total Positivity
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Haiyu
+    family-names: Chen
+    email: hychen@math.cuhk.edu.hk
+    affiliation: The Chinese University of Hong Kong
+  - given-names: Kaitao
+    family-names: Xie
+    email: ktxie@math.cuhk.edu.hk
+    affiliation: The Chinese University of Hong Kong
+repository-code: 'https://github.com/Hai-Yu-Chen/RegOfUnipConjClassInTP.git'
+url: 'https://github.com/Hai-Yu-Chen/RegOfUnipConjClassInTP'
+abstract: >-
+  This code is to accompany the paper titled "Regularity of
+  Unipotent Elements in Total Positivity".
